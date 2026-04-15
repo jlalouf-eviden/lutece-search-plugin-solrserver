@@ -33,29 +33,26 @@
  */
 package fr.paris.lutece.plugins.solrserver;
 
+import java.io.IOException;
+
+import org.apache.solr.servlet.SolrDispatchFilter;
+
 import fr.paris.lutece.portal.business.user.AdminUser;
 import fr.paris.lutece.portal.service.admin.AdminUserService;
 import fr.paris.lutece.portal.service.util.AppPropertiesService;
-
-import org.apache.solr.common.util.FastInputStream;
-import org.apache.solr.servlet.SolrDispatchFilter;
-
-import java.io.IOException;
-
-import javax.servlet.Filter;
-import javax.servlet.FilterChain;
-import javax.servlet.FilterConfig;
-import javax.servlet.ServletException;
-import javax.servlet.ServletInputStream;
-import javax.servlet.ServletRequest;
-import javax.servlet.ServletResponse;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletRequestWrapper;
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.FilterConfig;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.ServletRequest;
+import jakarta.servlet.ServletResponse;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequestWrapper;
 
 
 public class SolrServerFilter extends SolrDispatchFilter
 {
     public static final String SOLR_DATA_DIR = "solr.data.dir";
+    public static final String SOLR_LOGS_DIR = "solr.logs.dir";
     public static final String SOLR_HOME_LABEL = "solr.solr.home";
     public static final String SOLR_URI = AppPropertiesService.getProperty( "solrserver.solr.uri" );
     public static final String SOLR_URI_UPDATE = AppPropertiesService.getProperty( "solrserver.solr.uri.update" );
@@ -66,30 +63,44 @@ public class SolrServerFilter extends SolrDispatchFilter
     public static final String SOLR_ABSOLUTE_DATA = AppPropertiesService.getProperty( "solrserver.solr.absolute.data" );
     public static final String SOLR_RELATIVE_DATA = AppPropertiesService.getProperty( "solrserver.solr.relative.data" );
     public static final String SOLR_ADMIN_CLIENT = AppPropertiesService.getProperty("solrserver.solr.host.client", "127.0.0.1" );
-   // private SolrDispatchFilter solrDispatchFilter = new SolrDispatchFilter(  );
 
+    private static final String SELECT_URI = "/collection1/select/";
+    private static final String UPDATE_URI = "/collection1/update/";
+    private static final String SUGGEST_URI = "/collection1/suggest/";
+    
+    private static FilterConfig _filterConfig;
+    private static boolean init;
+    
     @Override
     public  void init( FilterConfig filterConfig ) throws ServletException
     {
         String realPath = filterConfig.getServletContext(  ).getRealPath( "/" );
 
-        System.setProperty( SOLR_HOME_LABEL, realPath + SOLR_HOME );
+        System.setProperty( SOLR_HOME_LABEL, SOLR_HOME );
+        
+        System.setProperty( SOLR_LOGS_DIR, SOLR_HOME+"/logs" );
 
         if ( ( SOLR_ABSOLUTE_DATA == null ) || ( SOLR_ABSOLUTE_DATA.length(  ) == 0 ) )
         {
-            System.setProperty( SOLR_DATA_DIR, realPath + SOLR_RELATIVE_DATA );
+            System.setProperty( SOLR_DATA_DIR, realPath +"/"+ SOLR_RELATIVE_DATA );
         }
         else
         {
             System.setProperty( SOLR_DATA_DIR, SOLR_ABSOLUTE_DATA );
         }
 
-        super.init( filterConfig );
+    	_filterConfig = filterConfig;
     }
-    @Override
+    
+    @Override   
     public  void doFilter( ServletRequest request, ServletResponse response, FilterChain chain )
-        throws IOException, ServletException
-    {
+            throws IOException, ServletException
+    { 	
+    	if(init == false)
+    	{
+    		super.init( _filterConfig );
+    		init = true;
+    	}
         String strURI = ( (HttpServletRequest) request ).getRequestURI(  );
         boolean bCallSolr = false;
       
@@ -113,19 +124,40 @@ public class SolrServerFilter extends SolrDispatchFilter
         }
 
         if ( bCallSolr ) {
-            request = new HttpServletRequestWrapper((HttpServletRequest)request) {
-                @Override public String getServletPath() {
-                    String path = ((HttpServletRequest) getRequest()).getServletPath();
-                    path = path.substring( SOLR_URI.length() );
-                    path = "/collection1" + path;
+            request = new HttpServletRequestWrapper( (HttpServletRequest) request ) 
+            {
+                @Override 
+                public String getServletPath( ) 
+                {
+                	String path = null;
+                	String url = ( (HttpServletRequest) getRequest( ) ).getRequestURL( ).toString( );
+                	if( url.contains( "select" ) )
+                	{
+                		 path = SELECT_URI;
+                	}
+                	else if( url.contains( "update" ) )
+                	{
+                		path = UPDATE_URI;
+                	}
+                	else if( url.contains( "suggest" ) )
+                	{
+                		path = SUGGEST_URI;
+                	}
 
                     return path;
                 };
+                
+                @Override public String getPathInfo( ) 
+                {
+                    return null;
+                };
             };
+
             super.doFilter( request, response, chain );
         }
         
     }
+    
     @Override
     public  void destroy(  )
     {

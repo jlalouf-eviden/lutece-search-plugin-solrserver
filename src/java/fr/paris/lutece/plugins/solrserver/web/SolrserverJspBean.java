@@ -36,19 +36,24 @@ package fr.paris.lutece.plugins.solrserver.web;
 import fr.paris.lutece.portal.service.template.AppTemplateService;
 import fr.paris.lutece.portal.web.admin.PluginAdminPageJspBean;
 import fr.paris.lutece.util.html.HtmlTemplate;
-
-import javax.servlet.http.HttpServletRequest;
+import jakarta.enterprise.context.RequestScoped;
+import jakarta.inject.Named;
+import jakarta.servlet.http.HttpServletRequest;
 
 
 /**
  * This class provides the user interface to manage form features ( manage,
  * create, modify, remove)
  */
+@RequestScoped
+@Named
 public class SolrserverJspBean extends PluginAdminPageJspBean
 {
     public static final String RIGHT_MANAGE_SOLRSERVER = "SORLSERVER_ADD_FILE";
     private static final String TEMPLATE_FORM = "admin/plugins/solrserver/form.html";
 
+	private static final long serialVersionUID = 4593411067605953425L;
+    
     public final String getForm( HttpServletRequest request )
     {
         HtmlTemplate templateList = AppTemplateService.getTemplate( TEMPLATE_FORM, getLocale(  ), null );
