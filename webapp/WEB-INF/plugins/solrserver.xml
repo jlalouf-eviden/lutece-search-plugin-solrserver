@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?><plug-in>
     <name>solrserver</name>
     <class>fr.paris.lutece.portal.service.plugin.PluginDefaultImplementation</class>
-    <version>3.0.2-SNAPSHOT</version>
+    <version>4.0.0-SNAPSHOT</version>
     <description>solrserver.plugin.description</description>
     <documentation/>
     <installation/>
@@ -12,16 +12,7 @@
     <icon-url>images/admin/skin/plugins/solrserver/solr.jpg</icon-url>
     <copyright>Copyright 2001-2015 Mairie de Paris</copyright>
     <db-pool-required>0</db-pool-required>
-    
-    
-    <filters>
-        <filter>
-            <filter-name>solrserver</filter-name>
-            <url-pattern>/solrserver/*</url-pattern>
-            <filter-class>fr.paris.lutece.plugins.solrserver.SolrServerFilter</filter-class>
-        </filter>
-    </filters>
-    
+       
     <admin-features>	
         <admin-feature>
             <feature-id>SORLSERVER_ADD_FILE</feature-id>
@@ -34,5 +25,18 @@
         </admin-feature>
     </admin-features>
     
+    <filters>
+	   <filter>
+	        <filter-name>solrUpdateFilter</filter-name>
+	        <url-pattern>/solrserver/solr/update</url-pattern>
+	        <filter-class>fr.paris.lutece.plugins.solrserver.web.SolrUpdateFilter</filter-class>
+	        <init-param>
+	        	<param-name>serviceServletPath</param-name>
+	        	<param-value>/service/admin/multipartServlet</param-value>
+	        </init-param>
+	        <dispatcher>FORWARD</dispatcher>
+            <dispatcher>REQUEST</dispatcher>
+	   </filter>
+   </filters>
     
 </plug-in>
